@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+set -e
+set -u
+
+script_name="$(basename "$0")"
+script_dir="$(realpath "$(dirname "$0")")"
+
+usage() {
+  echo "${script_name}: usage: ${script_name}" >&2
+}
+
+exit_with_error() {
+  echo "${script_name}: error: $1" >&2
+  usage
+  exit 1
+}
+
+recieved_arguments="$#"
+expected_arguments="0"
+
+if [ "${recieved_arguments}" != "${expected_arguments}" ]; then
+  exit_with_error "invalid number of arguments, expected \"${expected_arguments}\", recieved \"${recieved_arguments}\""
+fi
+
+if [ "$(id -u)" != "0" ]; then
+  exit_with_error "script must be run as root"
+fi
+
+extract_variable() {
+  grep "^${1}=" "${2}" | sed -E "s/^${1}=(.*)$/\1/"
+}
+
+compress() {
+  source="${1}"
+  gzip "$source"
+}
+
+backup_relative_filename="$(date +%Y)/$(date +%m)/$(date +%d)/$(date +%s).bak"
+
+"${script_dir}/create-backup-local" "${backup_relative_filename}" &&
+  compress "${script_dir}/../backups/${backup_relative_filename}" &&
+  "${script_dir}/upload" "$(realpath "${script_dir}/../backups")" "${backup_relative_filename}.gz" &&
+  "${script_dir}/clear-backups"

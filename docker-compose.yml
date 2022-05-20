@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=$DB_PASSWORD
+      - MSSQL_PID=$MSSQL_PID
+    ports:
+      - $DB_PORT:1433
+    restart: always
+    volumes:
+      - ./database:/var/opt/mssql
+      - ./backups:/backups
